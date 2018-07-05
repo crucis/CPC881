@@ -73,18 +73,21 @@ class Population {
     };
 
     void generate() {
-        uniform_real_distribution<double> distribution(-30.0, 30.0);
-        for (int i = 0; i < survivor_size * coding_length; i++) {
-            srand(time(NULL) + i);
-            pop_list[i] =  double(distribution(generator));
+        uniform_real_distribution<double> distribution(-10, 10);
+        for (int j = 0; j < survivor_size * coding_length; j+= coding_length) {
+            // cout << "First Gen "<< j << ":";
+            for (int k = 0; k < coding_length; k++){ 
+                pop_list[j + k] = distribution(generator);
+                // cout << " - "<< j + k << ": " << pop_list[j + k];
+            }
+            cout << "\n";
         };
-        srand(2 ^ time(NULL));
         compute_fitness(survivor_size, 1);
     };
     
     void compute_fitness(int total_pop, int func_num) {
 
-        fitness_function(pop_list, fitness_list, coding_length, total_pop, func_num);
+        fitness_function(pop_list, fitness_list, coding_length, total_pop + 1, func_num);
     };
 
     void tournament(int nb_challengers, int total_pop, int * score_array) {
@@ -114,21 +117,29 @@ class Population {
         double chance;
         unsigned int n = 0;
         int pop_index = 0;
-        double prob_array[total_pop] = {0};
+        double *prob_array = new double[total_pop];
         uniform_real_distribution<double> distribution(0, 1.0);
 
         compute_fitness(total_pop, 1);
         // Get sum of all fitness
         for (int i = 0; i < total_pop; i++) {
             fitness_sum += abs(fitness_list[i]);
+            //cout << "index " << i << " " << fitness_sum << "\n";
         };
-        cout << "fitn" << fitness_sum << "\n";
+        //cout << "fitn " << fitness_sum << "\n";
         //cout << fitness_sum << " "    << abs(fitness_list[0]);
+        double prob_array_sum = 0;
         for (int i = 0; i < total_pop; i++) {
             prob_array[i] = 1 - abs(fitness_list[i])/fitness_sum;
-            cout << "i" << i << ": " << prob_array[i] << " " << fitness_list[i] << "  \n";
+            prob_array_sum += prob_array[i];
+        };
+
+        for (int i = 0; i < total_pop; i++) { 
+            prob_array[i] = prob_array[i]/prob_array_sum;
+            //cout << "i" << i << ": " << prob_array[i] << " " << fitness_list[i] << "  \n";
         };
 /*      
+
         double offset = 0;
         for (int i = 0; n < size; i++) { 
             chance = distribution(generator);
@@ -140,17 +151,19 @@ class Population {
 
 
         // Choose based on fitness probability which individuals will be copied
-        for (int i = 0; n < size; i = i + 1) {
-            pop_index = i % total_pop;
+        for (int i = 0; n < size * coding_length; i = i + coding_length) {
+            pop_index = (i % total_pop * coding_length);
             //prob_fit = 1 - abs(fitness_list[pop_index/coding_length])/fitness_sum;
             chance = distribution(generator);
             //if (chance < prob_fit) {
             if (chance < prob_array[pop_index]) {
+                //cout << "chosen: " << pop_index << "\n";
+                
                 for (int k = 0; k < coding_length; k++) {
-                    chosen[n + k] = pop_list[pop_index * coding_length + k];
-                    cout << "chosen: " << pop_index << "\n";
+                    chosen[n + k] = pop_list[pop_index + k];
+                    //cout << n + k << " - " << ": " << pop_index + k << " " << chosen[n + k] << "\n";
                 };
-                n = n + 1;
+                n = n + coding_length;
             };
         };         
         //cout << "\n";
@@ -159,7 +172,7 @@ class Population {
     void mutation(double *children, double *mutatedChildren, short size) {
         short arrayIndex;
         double chance;
-        uniform_real_distribution<double> distribution(-30.0, 30.0);
+        uniform_real_distribution<double> distribution(-2.0, 2.0);
 
         for (int individual = 0; individual < size * coding_length; individual = individual + coding_length) {
             chance = double(rand())/RAND_MAX;
@@ -168,7 +181,8 @@ class Population {
             };
             if (mutation_probability > chance) {
                 arrayIndex = short(rand() % coding_length);
-                mutatedChildren[individual + arrayIndex] = double(distribution(generator));
+                mutatedChildren[individual + arrayIndex] = mutatedChildren[individual + arrayIndex] + 
+                                                distribution(generator);
             };
         };
 
@@ -189,18 +203,22 @@ class Population {
                 crossover_point = short(rand() % coding_length);
                 firstParentIndex = childIndex % chosenSize;
                 secondParentIndex = (firstParentIndex == chosenSize - 1) ? 0: firstParentIndex + 1;
-                //cout << "chid1: " << childIndex << " child2: " << secondChildIndex << "\n";
-                //cout << "   First" << firstParentIndex << ": " << chosen[firstParentIndex] << " - " << chosen[firstParentIndex + 1];
-                //cout << "   Second" << secondParentIndex << ": " << chosen[secondParentIndex] << " - " << chosen[secondParentIndex + 1];
-                //cout<< "\n";
+                // cout << "chid1: " << childIndex << " child2: " << secondChildIndex << "\n";
+                // cout << "   First" << firstParentIndex << ": " << chosen[firstParentIndex] << " - " << chosen[firstParentIndex + 1];
+                // cout << "   Second" << secondParentIndex << ": " << chosen[secondParentIndex] << " - " << chosen[secondParentIndex + 1];
+                // cout<< "\n";
                 for (int i = 0; i < crossover_point; i++) {
-                    children[childIndex + i] = chosen[firstParentIndex + i];
-                    children[secondChildIndex + i] = chosen[secondParentIndex + i];
+//                    children[childIndex + i] = chosen[firstParentIndex + i];
+                    children[secondChildIndex + i] = (chosen[firstParentIndex + i] - chosen[secondParentIndex + i]);
+//                    children[secondChildIndex + i] = chosen[secondParentIndex + i];
 
                 };
                 for (int i = crossover_point; i < coding_length; i++) {
-                    children[childIndex + i] = chosen[secondParentIndex + i];
-                    children[secondChildIndex + i] = chosen[firstParentIndex + i];
+
+                    children[childIndex + i] = chosen[secondParentIndex + i] - chosen[firstParentIndex + i];
+//                    children[childIndex + i] = chosen[secondParentIndex + i];
+//                    children[secondChildIndex + i] = chosen[firstParentIndex + i];
+                    children[secondChildIndex + i] = (chosen[firstParentIndex + i] + chosen[firstParentIndex + i]) / 2;
                 };
             }
             else {
@@ -208,7 +226,9 @@ class Population {
                 secondParentIndex = (firstParentIndex == chosenSize - 1) ? 0: firstParentIndex + 1;
                 for (int i = 0; i < coding_length; i++) {
                     children[childIndex + i] = chosen[firstParentIndex + i];
+
                     children[secondChildIndex + i] = chosen[secondParentIndex + i];
+
                 };
             };
         };
@@ -225,33 +245,58 @@ int ini_flag = 0, n_flag, func_flag, *SS;
 
 int main() {
     srand(time(NULL));
-    const int survivor_size = 2;
-    const int offspring_size = 4;
+    const int survivor_size = 10;
+    const int offspring_size = 10;
     const int coding_length = 2;
     const int func_number = 1;
-    const int gen_number = 3;
-    const float mutation_probability = 0.05;
-    const float crossover_probability = 0.9;
+    const int gen_number = 100;
+    const float mutation_probability = 0.005;
+    const float crossover_probability = 1.0;
     double chosen[survivor_size * coding_length] = {0};
     double mutated[offspring_size * coding_length] = {0};
     double children[offspring_size * coding_length] = {0};
     double all_pop[(survivor_size + offspring_size) * coding_length] = {0};
+    //double fitness_test[survivor_size + offspring_size] = {0};
     Population pop(&cec14_test_func, coding_length, survivor_size, offspring_size, mutation_probability, crossover_probability);
     pop.compute_fitness(survivor_size, func_number);
 
     for (int i = 0; i < gen_number; i++) {
+        cout << "--------------ROULETTE--------------\n";
         pop.roullete(chosen, pop.survivor_size, offspring_size);
+        cout << "--------------CROSSOVER--------------\n";
         pop.crossover(chosen, children, offspring_size);
+        cout << "--------------MUTATION--------------\n";
         pop.mutation(children, mutated, offspring_size);
-        for (int j = survivor_size * coding_length; j < (survivor_size + offspring_size) * coding_length; j++) {
-            pop.pop_list[j] = mutated[j - survivor_size * coding_length];
+        for (int j = survivor_size; j < survivor_size + offspring_size; j++) {
+            //cout << "Offspring" << j << ":";
+            for (int k = 0; k < coding_length; k++){ 
+//                pop.pop_list[j + k] = mutated[j + k - survivor_size];
+                pop.pop_list[j + k] = chosen[j + k - survivor_size];
+                //cout << " - " << pop.pop_list[j + k];
+            }
+            //cout << "\n";
         };
+        cout << "--------------FITNESS--------------\n";
         pop.compute_fitness(survivor_size + offspring_size, func_number);
+        cout << "--------------ROULETTE FOR SURVIVAL--------------\n";
         pop.roullete(chosen, survivor_size + offspring_size, survivor_size);
-        for (int j = 0; j < survivor_size * coding_length; j++) {
-            pop.pop_list[j] = chosen[j];
-        };
 
+        for (int j = 0; j < survivor_size; j++) {
+            //cout << "Survived"<< j << ":";
+            for (int k = 0; k < coding_length; k++){ 
+                pop.pop_list[j + k] = chosen[j + k];
+                //cout << " - " << pop.pop_list[j + k];
+            }
+            //cout << " / Fitness = " << pop.fitness_list[j];
+            //cout << "\n";
+        };
+        //if (i % 999 == 0){
+        cout << "================================\n";
+        cout << "END of GEN: " << i << "\n";
         cout << "Min: " << *min_element(pop.fitness_list, pop.fitness_list + survivor_size) << "\n";
+        cout << "Max: " << *max_element(pop.fitness_list, pop.fitness_list + survivor_size) << "\n";
+        cout << "================================\n";
+        //}
+
     };
 }

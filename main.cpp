@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
+#include <cstdlib>
 
 
 void cec14_test_func(double *, double *,int,int,int);
@@ -16,6 +17,12 @@ int ini_flag = 0, n_flag, func_flag, *SS;
 
 
 int main() {
+    // x        : vector input, size 1 by (pop_size * dim)
+    // f        : vector output, size 1 by (pop_size)
+    // n        : scalar dimension
+    // m        : scalar population size
+    // func_num : scalar function selection number
+
     int i, j, k, n, m, func_num;
     double *f, *x;
     FILE *fpt;
@@ -42,6 +49,7 @@ int main() {
         {
                 fscanf(fpt, "%s", x_str);
                 x[k] = atof(x_str);
+                //x[k] = 0;
                 //printf("%f\n",x[k]);
         }
 
@@ -49,11 +57,11 @@ int main() {
 
             for (j = 0; j < n; j++)
             {
-                x[1 * n + j] = 0.0;
+                x[n + j] = 0.0;
                 //printf("%f\n",x[1*n+j]);
             }
 
-
+        
         for (k = 0; k < 1; k++)
         {
             cec14_test_func(x, f, n, m, func_num);
