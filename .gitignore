@@ -1,2 +1,5 @@
 # Ignore bin/
 *bin/*
+*.vscode/*
+*.ipynb_checkpoints/*
+
