@@ -1,0 +1,13 @@
+algo = pg.algorithm(pg.sga( gen       = nb_gen, 
+                            cr        = 0.9,
+                            m         = 0.2,
+                            param_m   = 0.2,
+                            param_s   = 10,
+                            crossover = 'single',
+                            mutation  = 'gaussian',
+                            selection = 'tournament'
+                        ))
+                        
+dimensions = [2, 10, 30]
+nb_runs  = 51
+nb_population = 20
